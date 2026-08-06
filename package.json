@@ -1,0 +1,9 @@
+{
+  "name": "rocket-rescue",
+  "private": true,
+  "description": "Rocket Rescue — a cave-flying creature rescue built on gamekit.",
+  "scripts": {
+    "test": "node --test",
+    "icons": "node tools/make-icons.js"
+  }
+}

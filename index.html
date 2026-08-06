@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Rocket Rescue 🚀 — Fly the Caves, Save the Creatures</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#080d22">
+<meta name="description" content="Steer a tiny ship through 20 colourful obstacle caves, rescue the cute space creatures stranded inside, and reach daylight with your hull intact.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rocket Rescue">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="lib/gk-base.css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+</head>
+<body>
+
+<!-- Splash -->
+<div class="screen active" id="screen-splash">
+  <div class="splash-inner">
+    <div class="splash-orbit" aria-hidden="true"><span>🚀</span><span>🐣</span><span>💎</span></div>
+    <h1 class="logo">ROCKET<span>RESCUE</span></h1>
+    <p class="tagline">Thread the caves. Scoop up every stranded creature. Get out before the hull gives.</p>
+    <button class="btn big" id="btn-continue-as" style="display:none"></button>
+    <button class="btn big green" id="btn-start" onclick="App.play()">🚀 Start Flying</button>
+    <button class="btn ghost" id="btn-install" style="display:none">📲 Add to Home Screen</button>
+    <p class="keys-hint">⌨️ Arrow keys / WASD to fly · P to pause</p>
+    <div class="splash-foot">
+      <span id="sync-badge">⏳ connecting…</span>
+      <button class="btn-sound iconbtn">🔊</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile picker (roster + PIN modals are rendered by GK.Profiles) -->
+<div class="screen" id="screen-profiles">
+  <header class="topbar">
+    <button class="iconbtn" onclick="App.showScreen('splash')">←</button>
+    <h2 class="grow">Who's flying?</h2>
+    <button class="btn-sound iconbtn">🔊</button>
+  </header>
+  <div class="content">
+    <div class="profile-list" id="profile-list"></div>
+  </div>
+</div>
+
+<!-- Cave map -->
+<div class="screen" id="screen-map">
+  <header class="topbar sticky">
+    <button class="iconbtn" onclick="App.play()">👥</button>
+    <div class="map-player grow" id="map-player"></div>
+    <span class="map-stat" id="map-stars"></span>
+    <span class="map-stat" id="map-dust"></span>
+    <button class="iconbtn" onclick="App.showLeaderboard()">🏆</button>
+  </header>
+  <div class="content">
+    <button class="btn big green wide" id="btn-continue"></button>
+    <div class="row-btns2">
+      <button class="btn blue" onclick="App.showShop()">✨ Stardust Shop</button>
+      <button class="btn" id="btn-deep" onclick="App.startDeep()" style="display:none">🌌 Deep Rescue</button>
+    </div>
+    <div id="world-list"></div>
+  </div>
+</div>
+
+<!-- Stardust shop -->
+<div class="screen" id="screen-shop">
+  <header class="topbar sticky">
+    <button class="iconbtn" onclick="App.showMap()">←</button>
+    <h2 class="grow">✨ Stardust Shop</h2>
+    <span class="map-stat" id="shop-dust"></span>
+  </header>
+  <div class="content">
+    <p class="nudge">Permanent refits for your ship — earn stardust by rescuing creatures.</p>
+    <div class="shop-list" id="shop-list"></div>
+  </div>
+</div>
+
+<!-- Leaderboard -->
+<div class="screen" id="screen-leaderboard">
+  <header class="topbar sticky">
+    <button class="iconbtn" onclick="App.showMap()">←</button>
+    <h2 class="grow">🏆 Family Pilots</h2>
+    <button class="btn-sound iconbtn">🔊</button>
+  </header>
+  <div class="content">
+    <p class="nudge">Ranked by best Deep Rescue score.</p>
+    <div class="lb-rows" id="lb-rows"></div>
+  </div>
+</div>
+
+<!-- Game -->
+<div class="screen" id="screen-game">
+  <header class="gamebar">
+    <button class="iconbtn small" onclick="Game.pause()">⏸</button>
+    <span class="hud hull" id="hud-hull">❤❤❤</span>
+    <div class="progress"><div class="progress-fill" id="hud-bar-fill"></div></div>
+    <span class="hud powers" id="hud-powers"></span>
+    <span class="hud depth" id="hud-depth"></span>
+    <span class="hud res" id="hud-res">🐣 0</span>
+  </header>
+  <div class="game-stage">
+    <canvas id="cv"></canvas>
+  </div>
+</div>
+
+<!-- Results -->
+<div class="screen" id="screen-results">
+  <div class="res-inner">
+    <div class="res-emoji" id="res-emoji">🌅</div>
+    <h2 class="res-title" id="res-title"></h2>
+    <div class="res-stars" id="res-stars"></div>
+    <div class="res-score" id="res-score">0</div>
+    <div class="res-stats" id="res-stats"></div>
+    <p class="res-note" id="res-note"></p>
+    <p class="res-finished" id="res-finished" style="display:none">👑 Every cave flown and every creature home. You are the Rocket Rescue champion!</p>
+    <div class="res-actions">
+      <button class="btn grey" onclick="App.showMap()">🗺️ Map</button>
+      <button class="btn" id="res-retry" style="display:none"></button>
+      <button class="btn green" id="res-next" style="display:none"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Pause -->
+<div class="modal" id="modal-pause">
+  <div class="sheet">
+    <h2>⏸ Paused</h2>
+    <button class="btn blue wide" id="btn-music" onclick="App.toggleMusic()">🎵 Music: On</button>
+    <div class="row-btns2">
+      <button class="btn green" onclick="Game.resume()">▶️ Resume</button>
+      <button class="btn grey" onclick="Game.quit()">🗺️ Quit</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- gamekit (vendored from rvenning/gamekit into lib/) -->
+<script src="lib/gk-util.js"></script>
+<script src="lib/gk-audio.js"></script>
+<script src="lib/gk-ui.js"></script>
+<script src="lib/gk-storage.js"></script>
+<script src="lib/gk-profiles.js"></script>
+<script src="lib/gk-pwa.js"></script>
+<script src="lib/gk-fx.js"></script>
+<script src="lib/gk-debug.js"></script>
+<script>
+// Sparkly and light: small round particles, a shake that settles fast so the
+// cave walls stay readable at speed.
+const Fx = GK.Fx.configure({
+  grav: 120, poolCap: 600, shakeMax: 12, shakeDecay: 32, shape: "circle",
+  burstSpeed: 150, burstSize: 2.4, textSize: 11, textDy: -30, textCap: 24,
+  font: "'Baloo 2', system-ui, sans-serif",
+});
+const Tween = GK.Tween;
+</script>
+<script src="js/firebase-config.js"></script>
+<!-- data registries -->
+<script src="js/caves.js"></script>
+<script src="js/creatures.js"></script>
+<script src="js/hazards.js"></script>
+<script src="js/powerups.js"></script>
+<script src="js/rng.js"></script>
+<script src="js/endless.js"></script>
+<script src="js/upgrades.js"></script>
+<!-- systems -->
+<script src="js/storage.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/game.js"></script>
+<script src="js/render.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

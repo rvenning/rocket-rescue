@@ -1,0 +1,170 @@
+/* Rocket Rescue — game styles on top of lib/gk-base.css.
+   The kit's primitives (.btn, .screen, .topbar, .modal, .toast, profile roster)
+   are re-themed through the --gk-* custom properties rather than forked. */
+
+:root {
+  --gk-accent: #5ad1ff;  --gk-accent-sh: #2a86ad;
+  --gk-green:  #37c98c;  --gk-green-sh:  #219266;
+  --gk-blue:   #7b8bff;  --gk-blue-sh:   #4f5cc4;
+  --gk-ink: #0a0f26;
+  --rr-void: #080d22;
+  --rr-cyan: #5ad1ff;
+  --rr-mint: #7ef0c8;
+  --rr-gold: #ffd166;
+  --rr-rose: #ff8fc0;
+  --rr-violet: #c58bff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+/* Paint the ROOT, not just body: with viewport-fit=cover iOS extends the
+   visual viewport past height:100% in standalone, and a body-only background
+   leaves a white strip behind the home indicator. */
+html { background: var(--rr-void); height: 100%; overflow: hidden; }
+body {
+  min-height: 100vh;          /* every screen is position:fixed, so body has
+                                 almost no content height — without this the
+                                 root colour shows through below it */
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Baloo 2', 'Comic Sans MS', system-ui, sans-serif;
+  color: #fff;
+  background:
+    radial-gradient(ellipse at 12% -8%, #22265e 0%, transparent 55%),
+    radial-gradient(ellipse at 92% 108%, #0f3a52 0%, transparent 60%),
+    linear-gradient(180deg, #141a45 0%, #080d22 72%);
+  background-color: var(--rr-void);   /* AFTER the shorthand, or it is a no-op */
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+.screen { background: transparent; }
+h2 { font-size: 22px; }
+.row-btns2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.row-btns2 .btn { width: 100%; margin: 8px 0; }
+.nudge { font-size: 13px; opacity: .75; text-align: center; margin: 6px 0 12px; }
+
+/* A bar of controls on a scrolling screen has to stay reachable. */
+.topbar.sticky {
+  position: sticky; top: 0; z-index: 4;
+  background: linear-gradient(180deg, rgba(8,13,34,.96) 70%, rgba(8,13,34,0));
+}
+
+/* -------------------------------- splash --------------------------------- */
+.splash-inner {
+  min-height: 100%; width: 100%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px;
+  padding: 24px; text-align: center;
+}
+.splash-orbit { font-size: 30px; letter-spacing: 14px; animation: bob 3s ease-in-out infinite; }
+@keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-7px) } }
+.logo {
+  font-size: clamp(40px, 11.5vw, 66px); line-height: .95; font-weight: 800;
+  color: var(--rr-cyan);
+  text-shadow: 0 4px 0 #21617f, 0 8px 0 rgba(0,0,0,.4);
+  margin: 6px 0 2px;
+}
+.logo span { display: block; color: var(--rr-rose); text-shadow: 0 4px 0 #a63f72, 0 8px 0 rgba(0,0,0,.4); }
+.tagline { font-size: 16.5px; opacity: .92; margin-bottom: 14px; max-width: 330px; }
+.btn.big { font-size: 22px; padding: 18px 34px; min-width: 260px; }
+.btn.ghost { background: rgba(255,255,255,.14); box-shadow: 0 4px 0 rgba(0,0,0,.3); }
+.btn.small { font-size: 15px; padding: 10px 14px; border-radius: 12px; margin: 0; box-shadow: 0 4px 0 rgba(0,0,0,.3); }
+.keys-hint { font-size: 12.5px; opacity: .55; margin-top: 10px; display: none; }
+@media (pointer: fine) { .keys-hint { display: block; } }
+.splash-foot { margin-top: 16px; display: flex; align-items: center; gap: 14px; opacity: .9; font-size: 14px; }
+
+/* --------------------------------- map ----------------------------------- */
+.map-player { font-size: 17px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.map-stat { font-weight: 800; font-size: 15px; color: var(--rr-gold); white-space: nowrap; }
+.world { margin: 18px 0 6px; }
+.world h3 {
+  font-size: 15px; letter-spacing: .5px; margin-bottom: 8px;
+  color: var(--wc, var(--rr-cyan)); text-transform: uppercase;
+}
+/* minmax(0,…) not 1fr: an `auto` minimum refuses to shrink below its content
+   and the last column spills off a narrow phone. */
+.cave-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.cave {
+  border: none; border-radius: 14px; padding: 9px 4px 7px; cursor: pointer;
+  font-family: inherit; color: #fff; min-width: 0;
+  background: rgba(255,255,255,.1); box-shadow: 0 4px 0 rgba(0,0,0,.32);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.cave.next { background: rgba(90,209,255,.28); box-shadow: 0 4px 0 var(--gk-accent-sh); }
+.cave.locked { opacity: .42; cursor: default; }
+.cave:not(.locked):active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.32); }
+.cave-n { font-size: 19px; font-weight: 800; line-height: 1; }
+.cave-name { font-size: 8.5px; opacity: .8; max-width: 100%; overflow: hidden;
+             text-overflow: ellipsis; white-space: nowrap; }
+.cave-stars { font-size: 9px; color: var(--rr-gold); letter-spacing: .5px; }
+
+/* -------------------------------- shop ----------------------------------- */
+.shop-list { display: flex; flex-direction: column; gap: 10px; padding-bottom: 30px; }
+.shop-card {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,.1); border-radius: 16px; padding: 12px 14px;
+}
+.shop-card.maxed { opacity: .62; }
+.shop-icon { font-size: 27px; width: 40px; text-align: center; }
+.shop-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.shop-name { font-weight: 800; font-size: 15px; }
+.shop-pips { color: var(--rr-cyan); font-size: 11px; letter-spacing: 2px; margin-left: 4px; }
+.shop-desc { font-size: 12.5px; opacity: .75; }
+.shop-max { font-weight: 800; font-size: 13px; color: var(--rr-gold); }
+
+/* ------------------------------ game screen ------------------------------ */
+/* No `display` here: gk-base already does .screen{display:none} +
+   .screen.active{display:flex}, and an ID selector outranks BOTH — which pins
+   the game screen visible on top of every other screen forever. All this needs
+   is to stop gk-base centring (which collapses the stage to zero width). */
+#screen-game { align-items: stretch; justify-content: flex-start; overflow: hidden; touch-action: none; }
+.gamebar {
+  display: flex; align-items: center; gap: 8px; flex: 0 0 auto;
+  padding: calc(6px + env(safe-area-inset-top)) 10px 6px;
+  background: rgba(6,10,28,.88); z-index: 5;
+}
+.gamebar .iconbtn.small { width: 36px; height: 36px; font-size: 16px; border-radius: 11px; }
+.progress {
+  flex: 1; height: 12px; min-width: 50px; border-radius: 7px; overflow: hidden;
+  background: rgba(0,0,0,.5); box-shadow: inset 0 2px 4px rgba(0,0,0,.4);
+}
+.progress-fill {
+  height: 100%; width: 0%; border-radius: 7px;
+  background: linear-gradient(90deg, var(--rr-cyan), var(--rr-mint));
+  transition: width .12s linear;
+}
+.hud { font-weight: 800; font-size: 14px; white-space: nowrap; }
+.hud.hull { color: var(--rr-rose); letter-spacing: 1px; }
+.hud.res { color: var(--rr-mint); font-size: 16px; }
+.hud.res.short { color: rgba(255,255,255,.55); }
+.hud.depth { color: var(--rr-gold); }
+.hud.powers { font-size: 15px; }
+.game-stage {
+  position: relative; flex: 1 1 auto; width: 100%; min-height: 0;
+  overflow: hidden; touch-action: none; background: var(--rr-void);
+}
+/* The canvas is a replaced element: without an explicit CSS size it renders at
+   its ATTRIBUTE size (logical x DPR) and overflows every retina screen. */
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+
+/* -------------------------------- results -------------------------------- */
+.res-inner {
+  min-height: 100%; width: 100%; max-width: 480px; margin: 0 auto;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; padding: 24px; text-align: center;
+}
+.res-emoji { font-size: 58px; animation: bob 2s ease-in-out infinite; }
+.res-title { font-size: 26px; }
+.res-stars { font-size: 30px; color: var(--rr-gold); letter-spacing: 4px; }
+.res-score { font-size: 46px; font-weight: 800; color: var(--rr-gold); line-height: 1; }
+.res-stats {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
+  margin: 14px 0 6px; width: 100%; font-size: 14px; font-weight: 700;
+}
+.res-stats div { background: rgba(255,255,255,.09); border-radius: 12px; padding: 8px 10px; }
+.res-stats div:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.res-note { font-size: 13.5px; opacity: .82; min-height: 18px; max-width: 340px; }
+.res-finished { font-size: 14px; color: var(--rr-mint); font-weight: 800; margin-top: 8px; }
+.res-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+
+/* ----------------------------- leaderboard ------------------------------- */
+.lb-stat { font-weight: 800; font-size: 13px; opacity: .9; margin-left: 8px; }

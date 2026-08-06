@@ -1,0 +1,15 @@
+{
+  "name": "Rocket Rescue",
+  "short_name": "Rocket Rescue",
+  "description": "Fly a tiny ship through colourful obstacle caves and rescue the cute space creatures stranded inside.",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#080d22",
+  "theme_color": "#080d22",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
