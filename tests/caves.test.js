@@ -17,7 +17,7 @@ const assert = require("node:assert");
 const S = require("./load.js");
 
 const { Cave, CAVES, LH, LANE_MIN, SHIP_R, BAND, freeLane, blockedAt, creaturePos,
-        CREATURES, Endless, RNG, SEG } = S;
+        CREATURES, Endless, RNG, SEG, GK } = S;
 
 const NOMINAL_X = 140;         // where the ship nominally sits on screen
 const LANE_FLOOR = LANE_MIN - 2;   // hazards self-limit to LANE_MIN; allow float slop
@@ -39,43 +39,34 @@ function sealedPoint(cave, camX, worldX, y, r) {
 }
 
 /* ------------------------------------------------------------ path shape */
-test("every cave path is well formed and inside the stage", () => {
+// The geometry checks are gamekit's — stations that advance, walls inside the
+// stage, a width band, and a climb rate the player can actually make. Only the
+// per-cave numbers are ours: `maxSlope` is expressed in px of climb per px of
+// scroll, so dividing the ship's tolerable climb SPEED by the cave's scroll
+// speed turns a game constant into the geometric bound the linter wants.
+const CLIMB_LIMIT = 340;        // px/s of rise the ship can comfortably manage
+
+test("every cave path is well formed, inside the stage, and flyable", () => {
   const fails = [];
   for (const c of CAVES) {
-    for (let i = 1; i < c.path.length; i++)
-      if (c.path[i].x <= c.path[i - 1].x) fails.push(`${c.id}: station ${i} does not advance`);
+    fails.push(...GK.Corridor.lint(c.path.map((p) => ({ x: p.x, c: p.y, w: p.g })), {
+      label: c.id,
+      bounds: [0, LH], margin: 3,
+      minWidth: 60, maxWidth: 130,
+      maxSlope: CLIMB_LIMIT / c.speed,
+      step: 10,
+    }));
     if (c.path[c.path.length - 1].x < c.len)
       fails.push(`${c.id}: path ends at ${c.path[c.path.length - 1].x} before len ${c.len}`);
-    for (let x = 0; x <= c.len; x += 20) {
-      const s = Cave.sample(c.path, x);
-      if (s.c - s.g / 2 < 3) fails.push(`${c.id}@${x}: ceiling above the stage`);
-      if (s.c + s.g / 2 > LH - 3) fails.push(`${c.id}@${x}: floor below the stage`);
-    }
   }
   assert.deepEqual(fails, []);
 });
 
-test("no cave narrows past what a ship can thread", () => {
+test("every cave actually narrows somewhere — a uniform tunnel is no cave at all", () => {
   const fails = [];
   for (const c of CAVES) {
     const m = Cave.minGap(c.path);
-    if (m < 60) fails.push(`${c.id}: narrowest gap ${m.toFixed(1)} (< 60)`);
-    if (m > 118) fails.push(`${c.id}: never narrower than ${m.toFixed(1)} — no cave at all`);
-  }
-  assert.deepEqual(fails, []);
-});
-
-// A tunnel that climbs faster than the ship can rise is not a challenge, it is
-// a wall. The bound is generous — the ship crosses the stage in well under a
-// second — but it catches a mistyped station.
-test("no cave demands a climb the ship cannot make", () => {
-  const fails = [];
-  for (const c of CAVES) {
-    for (let x = 0; x < c.len; x += 10) {
-      const dy = Cave.centreAt(c.path, x + 10) - Cave.centreAt(c.path, x);
-      const need = Math.abs(dy / 10) * c.speed;         // px/s of climb required
-      if (need > 340) fails.push(`${c.id}@${x}: needs ${need.toFixed(0)} px/s of climb`);
-    }
+    if (m > 118) fails.push(`${c.id}: never narrower than ${m.toFixed(1)}`);
   }
   assert.deepEqual(fails, []);
 });

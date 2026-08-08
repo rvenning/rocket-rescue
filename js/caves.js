@@ -37,57 +37,56 @@ const BAND = { x0: 44, x1: 252 };
 
 const TAU = Math.PI * 2;
 
+// The tunnel geometry is gamekit's GK.Corridor — stations smoothstepped into a
+// centre line and two walls. This wrapper exists only to keep the game reading
+// in its own vocabulary (a cave has a ceiling and a floor, not a low and a high
+// wall) and to apply WALL_CLEAR without every caller repeating it.
+//
+// `path` stays a plain array of {x, y, g} because the endless generator appends
+// to and prunes it in place; a Corridor is built around it on demand and cached
+// until the array changes underneath.
 const Cave = {
   // Normalise an authored cave (arrays -> objects) exactly once. Endless caves
   // are generated in this same shape, so the engine only ever sees one thing.
   prepare(def) {
-    const c = {
+    return {
       ...def,
       path: def.path.map(([x, y, g]) => ({ x, y, g })),
       creatures: (def.creatures || []).map(([x, t, type], i) => ({ id: i, x, t, type })),
       orbs: (def.orbs || []).map(([x, t, type], i) => ({ id: i, x, t, type })),
       hazards: (def.hazards || []).map(([type, x, t, opts], i) => ({ id: i, type, x, t, ...(opts || {}) })),
     };
-    return c;
   },
 
-  // Smoothstepped centre + gap at a world x. Outside the authored range the end
-  // stations simply hold, so sampling past the mouth of a cave is safe.
-  sample(path, x) {
-    const n = path.length;
-    if (x <= path[0].x) return { c: path[0].y, g: path[0].g };
-    if (x >= path[n - 1].x) return { c: path[n - 1].y, g: path[n - 1].g };
-    let i = 0;
-    while (i < n - 2 && path[i + 1].x < x) i++;
-    const a = path[i], b = path[i + 1];
-    const u = (x - a.x) / (b.x - a.x);
-    const s = u * u * (3 - 2 * u);          // smoothstep: no kinks at a station
-    return { c: a.y + (b.y - a.y) * s, g: a.g + (b.g - a.g) * s };
+  // A corridor over the current stations, rebuilt whenever they change. The
+  // cache key is the array identity plus its length AND both end x's: the
+  // endless cave can append one station and prune another in the same frame,
+  // which leaves the length identical while the contents have moved.
+  _cor: null, _key: null, _forPath: null,
+  corridor(path) {
+    const key = path.length + ":" + path[0].x + ":" + path[path.length - 1].x;
+    if (this._forPath !== path || this._key !== key) {
+      this._cor = GK.Corridor.make(path.map((p) => ({ x: p.x, c: p.y, w: p.g })));
+      this._forPath = path;
+      this._key = key;
+    }
+    return this._cor;
   },
 
-  centreAt(path, x) { return this.sample(path, x).c; },
-  gapAt(path, x) { return this.sample(path, x).g; },
-  ceilAt(path, x) { const s = this.sample(path, x); return s.c - s.g / 2; },
-  floorAt(path, x) { const s = this.sample(path, x); return s.c + s.g / 2; },
+  // The game's own vocabulary: `g` for the gap, because every call site reads
+  // `s.c - s.g / 2` as "the ceiling".
+  sample(path, x) { const s = this.corridor(path).sample(x); return { c: s.c, g: s.w }; },
+  centreAt(path, x) { return this.corridor(path).centreAt(x); },
+  gapAt(path, x) { return this.corridor(path).widthAt(x); },
+  ceilAt(path, x) { return this.corridor(path).lowAt(x); },
+  floorAt(path, x) { return this.corridor(path).highAt(x); },
 
   // Fraction across the tunnel -> absolute y, kept clear of both walls.
-  place(path, x, t) {
-    const s = this.sample(path, x);
-    const top = s.c - s.g / 2 + WALL_CLEAR;
-    const bot = s.c + s.g / 2 - WALL_CLEAR;
-    if (bot <= top) return s.c;                       // pathologically tight: centre it
-    return Math.max(top, Math.min(bot, s.c - s.g / 2 + t * s.g));
-  },
+  place(path, x, t) { return this.corridor(path).place(x, t, WALL_CLEAR); },
 
   // Narrowest passage in a cave — the number the linter and the difficulty
-  // curve both care about. Sampled, because the minimum can fall between two
-  // stations when the gap is interpolating downward.
-  minGap(path, step = 20) {
-    let m = Infinity;
-    const end = path[path.length - 1].x;
-    for (let x = path[0].x; x <= end; x += step) m = Math.min(m, this.gapAt(path, x));
-    return m;
-  },
+  // curve both care about.
+  minGap(path, step = 20) { return this.corridor(path).minWidth(step); },
 };
 
 /* --------------------------------------------------------------- worlds -- */

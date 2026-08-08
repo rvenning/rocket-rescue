@@ -2,9 +2,13 @@
 //
 // The game ships plain <script> files with top-level `const` and no bundler, so
 // the suites run the real sources in a vm sandbox with just enough of a browser
-// stubbed out. `browser` is deliberately OFF: with `window` undefined each file
-// takes its `typeof window === "undefined"` branch and publishes its own
-// bindings, which is exactly the shape a Node test wants.
+// stubbed out. `browser: true`, because the tunnel geometry comes from
+// gamekit's GK.Corridor and every gk-* module opens with
+// `window.GK = window.GK || {}`. The `exports` list is what gets the game's own
+// top-level bindings back out.
+//
+// A pre-seeded GK in `globals` survives that line, which is the hook for
+// stubbing the UI layer.
 //
 // Order must match index.html's, or a file that reads another's top-level const
 // crashes on load.
@@ -19,6 +23,8 @@ const noop = () => {};
 const S = loadScripts({
   baseDir: ROOT,
   files: [
+    "lib/gk-util.js",
+    "lib/gk-path.js",
     "js/caves.js",
     "js/creatures.js",
     "js/hazards.js",
@@ -29,6 +35,7 @@ const S = loadScripts({
     "js/game.js",
   ],
   exports: [
+    "GK",
     "LW", "LH", "SHIP_R", "SHIP_W", "SHIP_H", "WALL_CLEAR", "BAND", "TAU",
     "Cave", "WORLDS", "CAVES", "CAVES_RAW", "cavesOfWorld",
     "CREATURES", "CREATURE_LIST", "creaturePos",
@@ -39,8 +46,11 @@ const S = loadScripts({
     "UPGRADES", "upgradeValue",
     "SHIP", "RULES", "Game",
   ],
+  browser: true,
   globals: {
-    // Everything the engine pokes at outside its own simulation.
+    // Everything the engine pokes at outside its own simulation. gk-util.js
+    // does `window.GK = window.GK || {}`, so this stub survives and GK.Corridor
+    // is added to it.
     GK: { UI: { showScreen: noop, openModal: noop, closeModal: noop, toast: noop } },
     Sfx: new Proxy({}, { get: () => noop }),
     Music: { enabled: false, start: noop, stop: noop, hold: noop },

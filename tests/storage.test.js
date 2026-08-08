@@ -19,6 +19,7 @@ const S = loadScripts({
   files: [
     "lib/gk-util.js",
     "lib/gk-storage.js",
+    "lib/gk-path.js",
     "js/caves.js",
     "js/creatures.js",
     "js/hazards.js",

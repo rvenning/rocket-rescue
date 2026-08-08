@@ -1,6 +1,6 @@
 // Rocket Rescue service worker — network-first, cache fallback.
 // BUMP the cache name on ANY shell change or devices keep serving the old build.
-const CACHE = "rocket-rescue-v1";
+const CACHE = "rocket-rescue-v2";
 const SHELL = [
   ".",
   "index.html",
@@ -15,6 +15,7 @@ const SHELL = [
   "lib/gk-pwa.js",
   "lib/gk-fx.js",
   "lib/gk-debug.js",
+  "lib/gk-path.js",
   "js/firebase-config.js",
   "js/caves.js",
   "js/creatures.js",
