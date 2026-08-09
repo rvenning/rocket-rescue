@@ -1,6 +1,6 @@
 // Rocket Rescue service worker — network-first, cache fallback.
 // BUMP the cache name on ANY shell change or devices keep serving the old build.
-const CACHE = "rocket-rescue-v2";
+const CACHE = "rocket-rescue-v3";
 const SHELL = [
   ".",
   "index.html",
